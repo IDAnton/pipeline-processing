@@ -1,6 +1,8 @@
 from queue import Queue
 from threading import Thread
 from typing import Callable, Dict, Any, List, Type, TypeVar, Generic
+from enum import Enum
+
 
 T = TypeVar("T")
 
@@ -26,23 +28,39 @@ class TypedChannel(Generic[T]):
         return self.queue.empty()
 
 
+class NodeType(Enum):
+    DEFAULT = "default"
+    SOURCE = "source"
+    SINK = "sink"
+
+
 class Node:
     def __init__(self, name: str,
-                 inputs: List[TypedChannel],
-                 outputs: List[TypedChannel],
-                 process_function: Callable[[Dict[str, Any]], Dict[str, Any]]):
+                 process_function,
+                 node_type: NodeType = NodeType.DEFAULT,
+                 inputs: List[TypedChannel] = None,
+                 outputs: List[TypedChannel] = None):
         self.name = name
         self.inputs = inputs
         self.outputs = outputs
         self.process_function = process_function
+        self.node_type = node_type
 
     def process(self):
-        input_data = {channel.name: channel.receive() for channel in self.inputs}
-        output_data = self.process_function(input_data)
-        for channel in self.outputs:
-            if channel.name in output_data:
-                channel.send(output_data[channel.name])
-
+        if self.node_type == NodeType.DEFAULT:
+            input_data = {channel.name: channel.receive() for channel in self.inputs}
+            output_data = self.process_function(input_data)
+            for channel in self.outputs:
+                if channel.name in output_data:
+                    channel.send(output_data[channel.name])
+        if self.node_type == NodeType.SOURCE:
+            output_data = self.process_function()
+            for channel in self.outputs:
+                if channel.name in output_data:
+                    channel.send(output_data[channel.name])
+        if self.node_type == NodeType.SINK:
+            input_data = {channel.name: channel.receive() for channel in self.inputs}
+            self.process_function(input_data)
 
 class Pipeline:
     def __init__(self, name: str):
@@ -58,10 +76,11 @@ class Pipeline:
     def add_node(self, node: Node):
         self.nodes.append(node)
 
-    def run(self, initial_data: Dict[str, Any]):
-        for channel_name, value in initial_data.items():
-            if channel_name in self.channels:
-                self.channels[channel_name].send(value)
+    def run(self, initial_data: Dict[str, Any] = None):
+        if initial_data is not None:
+            for channel_name, value in initial_data.items():
+                if channel_name in self.channels:
+                    self.channels[channel_name].send(value)
 
         threads = [Thread(target=node.process) for node in self.nodes]
         for thread in threads:
