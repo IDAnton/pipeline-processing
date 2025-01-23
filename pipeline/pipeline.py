@@ -28,6 +28,31 @@ class TypedChannel(Generic[T]):
         return self.queue.empty()
 
 
+class Pipeline:
+    def __init__(self, name: str):
+        self.name = name
+        self.nodes: List[Node] = []
+        self.channels: Dict[str, TypedChannel] = {}
+
+    def add_channel(self, channel_name: str, data_type: Type[T]) -> TypedChannel[T]:
+        channel = TypedChannel(channel_name, data_type)
+        self.channels[channel_name] = channel
+        return channel
+
+    def add_node(self, node):
+        self.nodes.append(node)
+
+    def run(self, initial_data: Dict[str, Any] = None):
+        if initial_data is not None:
+            for channel_name, value in initial_data.items():
+                if channel_name in self.channels:
+                    self.channels[channel_name].send(value)
+
+        threads = [Thread(target=node.process) for node in self.nodes]
+        for thread in threads:
+            thread.start()
+
+
 class NodeType(Enum):
     DEFAULT = "default"
     SOURCE = "source"
@@ -62,29 +87,30 @@ class Node:
             input_data = {channel.name: channel.receive() for channel in self.inputs}
             self.process_function(input_data)
 
-class Pipeline:
-    def __init__(self, name: str):
-        self.name = name
-        self.nodes: List[Node] = []
-        self.channels: Dict[str, TypedChannel] = {}
 
-    def add_channel(self, channel_name: str, data_type: Type[T]) -> TypedChannel[T]:
-        channel = TypedChannel(channel_name, data_type)
-        self.channels[channel_name] = channel
-        return channel
+class PipelineNode(Node):
+    def __init__(self, name: str,
+                 node_type: NodeType = NodeType.DEFAULT,
+                 inputs: List[TypedChannel] = None,
+                 outputs: List[TypedChannel] = None,
+                 pipeline: Pipeline = None):
+        super().__init__(name, self.process_pipeline, node_type,  inputs, outputs)
+        self.pipeline = pipeline
 
-    def add_node(self, node: Node):
-        self.nodes.append(node)
+    def process_pipeline(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        for channel_name, data in input_data.items():
+            if channel_name in self.pipeline.channels:
+                self.pipeline.channels[channel_name].send(data)
 
-    def run(self, initial_data: Dict[str, Any] = None):
-        if initial_data is not None:
-            for channel_name, value in initial_data.items():
-                if channel_name in self.channels:
-                    self.channels[channel_name].send(value)
+        self.pipeline.run(input_data)
 
-        threads = [Thread(target=node.process) for node in self.nodes]
-        for thread in threads:
-            thread.start()
+        output_data = {}
+        for channel in self.outputs:
+            if channel.name in self.pipeline.channels:
+                result = self.pipeline.channels[channel.name].receive()
+                output_data[channel.name] = result
+        return output_data
+
 
 if __name__ == "__main__":
     def summator_logic(data: Dict[str, Any]) -> Dict[str, Any]:
