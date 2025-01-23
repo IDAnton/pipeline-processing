@@ -7,7 +7,7 @@ def source() -> Dict[str, Any]:
     return {"input": [random.randint(1, 100) for _ in range(10)]}
 
 def odd_filter(data: Dict[str, Any]) -> Dict[str, Any]:
-    return {"output": data["input"]}
+    return {"output": [i for i in data["input"] if i % 2 != 0]}
 
 def sink(data: Dict[str, Any]):
     with open("source_sink_output.txt", "w") as f:
