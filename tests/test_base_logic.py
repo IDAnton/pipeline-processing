@@ -1,7 +1,7 @@
 import unittest
 from typing import Dict, Any
 
-from pipeline import TypedChannel, Node, Pipeline
+from pipeline.pipeline import TypedChannel, Node, Pipeline
 
 
 class TestTypedChannel(unittest.TestCase):
@@ -18,12 +18,11 @@ class TestTypedChannel(unittest.TestCase):
 
 class TestNode(unittest.TestCase):
     def test_node_process(self):
-        # Создаём входные и выходные каналы
         input1 = TypedChannel("input1", int)
         input2 = TypedChannel("input2", int)
         sum_channel = TypedChannel("sum", int)
 
-        def summator_logic(data: Dict[str, Any]) -> Dict[str, Any]:
+        def summator_logic(data: Dict[str, int]) -> Dict[str, int]:
             return {"sum": data["input1"] + data["input2"]}
 
         summator = Node(

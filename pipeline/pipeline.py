@@ -6,10 +6,6 @@ T = TypeVar("T")
 
 
 class TypedChannel(Generic[T]):
-    """
-    Канал для передачи данных между узлами
-    """
-
     def __init__(self, name: str, data_type: Type[T]):
         self.name = name
         self.data_type = data_type
@@ -31,10 +27,6 @@ class TypedChannel(Generic[T]):
 
 
 class Node:
-    """
-    Узел обработки данных.
-    """
-
     def __init__(self, name: str,
                  inputs: List[TypedChannel],
                  outputs: List[TypedChannel],
@@ -53,10 +45,6 @@ class Node:
 
 
 class Pipeline:
-    """
-    Конвейер обработки данных.
-    """
-
     def __init__(self, name: str):
         self.name = name
         self.nodes: List[Node] = []
@@ -76,7 +64,6 @@ class Pipeline:
             if channel_name in self.channels:
                 self.channels[channel_name].send(value)
 
-        # Запустить обработку в узлах
         threads = [Thread(target=node.process) for node in self.nodes]
         for thread in threads:
             thread.start()
@@ -84,7 +71,6 @@ class Pipeline:
             thread.join()
 
 if __name__ == "__main__":
-    # Пример использования
 
     def summator_logic(data: Dict[str, Any]) -> Dict[str, Any]:
         return {"sum": data["input1"] + data["input2"]}
@@ -125,4 +111,4 @@ if __name__ == "__main__":
     pipeline.run(initial_data)
 
     result = product_channel.receive()
-    print(f"Результат: {result}")
+    print(f"Result: {result}")
