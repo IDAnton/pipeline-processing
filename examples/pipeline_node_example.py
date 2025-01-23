@@ -3,7 +3,7 @@ from typing import Dict, Any
 from pipeline.pipeline import Node, Pipeline, NodeType, PipelineNode
 
 
-def create_internal_pipeline():
+def create_internal_pipeline() -> Pipeline:
     def summator_logic(data: Dict[str, Any]) -> Dict[str, Any]:
         return {"sum": data["input1"] + data["input2"]}
     def multiplier_logic(data: Dict[str, Any]) -> Dict[str, Any]:
@@ -15,14 +15,12 @@ def create_internal_pipeline():
     input3 = internal_pipeline.add_channel("multiplier", int)
     sum_channel = internal_pipeline.add_channel("sum", int)
     product_channel = internal_pipeline.add_channel("output", int)
-
     summator = Node(
         name="Summator",
         inputs=[input1, input2],
         outputs=[sum_channel],
         process_function=summator_logic
     )
-
     multiplier = Node(
         name="Multiplier",
         inputs=[sum_channel, input3],
@@ -31,10 +29,7 @@ def create_internal_pipeline():
     )
     internal_pipeline.add_node(summator)
     internal_pipeline.add_node(multiplier)
-
     return internal_pipeline
-
-
 
 def source() -> Dict[str, Any]:
     return {"input1": random.randint(1, 10),
@@ -50,7 +45,6 @@ input1 = pipeline.add_channel("input1", int)
 input2 = pipeline.add_channel("input2", int)
 input3 = pipeline.add_channel("multiplier", int)
 output = pipeline.add_channel("output", int)
-
 
 generator_node = Node(
     name="source",
