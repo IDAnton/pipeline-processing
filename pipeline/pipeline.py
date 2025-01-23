@@ -59,7 +59,6 @@ class Pipeline:
         self.nodes.append(node)
 
     def run(self, initial_data: Dict[str, Any]):
-        # Заполнить начальные данные в каналы
         for channel_name, value in initial_data.items():
             if channel_name in self.channels:
                 self.channels[channel_name].send(value)
@@ -67,24 +66,21 @@ class Pipeline:
         threads = [Thread(target=node.process) for node in self.nodes]
         for thread in threads:
             thread.start()
-        for thread in threads:
-            thread.join()
 
 if __name__ == "__main__":
-
     def summator_logic(data: Dict[str, Any]) -> Dict[str, Any]:
         return {"sum": data["input1"] + data["input2"]}
 
-
     def multiplier_logic(data: Dict[str, Any]) -> Dict[str, Any]:
-        return {"product": data["sum"] * 2}
+        return {"product": data["sum"] * data["multiplier"]}
 
     pipeline = Pipeline(name="ExamplePipeline")
 
     input1 = pipeline.add_channel("input1", int)
     input2 = pipeline.add_channel("input2", int)
+    input3 = pipeline.add_channel("multiplier", float)
     sum_channel = pipeline.add_channel("sum", int)
-    product_channel = pipeline.add_channel("product", int)
+    product_channel = pipeline.add_channel("product", float)
 
     summator = Node(
         name="Summator",
@@ -95,7 +91,7 @@ if __name__ == "__main__":
 
     multiplier = Node(
         name="Multiplier",
-        inputs=[sum_channel],
+        inputs=[sum_channel, input3],
         outputs=[product_channel],
         process_function=multiplier_logic
     )
@@ -106,6 +102,7 @@ if __name__ == "__main__":
     initial_data = {
         "input1": 2,
         "input2": 3,
+        "multiplier": 0.5,
     }
 
     pipeline.run(initial_data)
