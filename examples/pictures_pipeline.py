@@ -17,7 +17,7 @@ def denoise_filter(data: Dict[str, Any]) -> Dict[str, Any]:
     return {"denoised": denoised}
 
 def convert_to_jpg(data: Dict[str, Any]) -> Dict[str, Any]:
-    img = data["image"]
+    img = data["denoised"]
     _, encoded = cv2.imencode(".jpg", img)
     decoded = cv2.imdecode(encoded, cv2.IMREAD_COLOR)
     return {"jpg_image": decoded}
