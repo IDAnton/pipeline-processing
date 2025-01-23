@@ -36,6 +36,13 @@ def image_processing_pipeline():
         process_function=denoise_filter
     )
 
+    patched_detector = Node(
+        name="detector",
+        inputs=[raw_channel],
+        outputs=[denoised_channel],
+        process_function=denoise_filter
+    )
+
     jpg_converter = Node(
         name="JPGConverter",
         inputs=[denoised_channel],
@@ -45,6 +52,7 @@ def image_processing_pipeline():
 
     pipeline.add_node(denoiser)
     pipeline.add_node(jpg_converter)
+    pipeline.add_node(patched_detector)
 
     raw_image = load_image("image.png")
     pipeline.run(initial_data={"image": raw_image})
